@@ -1,0 +1,183 @@
+
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>College Library</title>
+  <style>
+    :root { --primary:#14532d; --accent:#f59e0b; --bg:#f6f8f6; --text:#1f2937; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+    header { background:var(--primary); color:#fff; padding:14px 20px; display:flex;
+             justify-content:space-between; align-items:center; position:sticky; top:0; z-index:10; }
+    header h1 { font-size:1.2rem; }
+    .hbtn { background:var(--accent); color:#000; border:0; padding:8px 14px; border-radius:20px; font-weight:600; cursor:pointer; }
+    .hero { background:linear-gradient(135deg,#14532d,#16a34a); color:#fff; text-align:center; padding:40px 20px; }
+    .hero h2 { font-size:1.7rem; margin-bottom:6px; }
+    .search { margin-top:18px; display:flex; justify-content:center; }
+    .search input { width:100%; max-width:480px; padding:13px 18px; border:0; border-radius:30px; font-size:1rem; }
+    .stats { max-width:1000px; margin:20px auto 0; padding:0 20px; display:grid;
+             grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+    .stat { background:#fff; border-radius:12px; padding:14px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,.06); }
+    .stat b { display:block; font-size:1.6rem; color:var(--primary); }
+    .stat span { color:#6b7280; font-size:.85rem; }
+    .filters { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; padding:18px 20px 8px; }
+    .chip { padding:7px 15px; border-radius:20px; border:1px solid #cbd5e1; background:#fff; cursor:pointer; }
+    .chip.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .grid { max-width:1000px; margin:auto; padding:12px 20px 40px; display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+    .book { background:#fff; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.07); }
+    .book h3 { font-size:1.02rem; }
+    .book small { color:#6b7280; display:block; margin-top:2px; }
+    .copies { display:flex; gap:8px; margin:12px 0; }
+    .pill { flex:1; text-align:center; background:#f1f5f9; border-radius:8px; padding:8px 4px; font-size:.8rem; color:#475569; }
+    .pill b { display:block; font-size:1.2rem; color:var(--text); }
+    .pill.avail b { color:#15803d; }
+    .pill.none b { color:#dc2626; }
+    .row { display:flex; gap:8px; }
+    .row button { flex:1; padding:9px; border:0; border-radius:8px; font-weight:600; cursor:pointer; }
+    .borrow { background:var(--primary); color:#fff; }
+    .borrow:disabled { background:#cbd5e1; cursor:not-allowed; }
+    .return { background:#e2e8f0; }
+    .return:disabled { opacity:.5; cursor:not-allowed; }
+    .empty { grid-column:1/-1; text-align:center; color:#6b7280; padding:40px; }
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:20px; z-index:20; }
+    .modal.open { display:flex; }
+    .box { background:#fff; border-radius:14px; max-width:420px; width:100%; padding:22px; max-height:90vh; overflow:auto; }
+    .box h3 { margin-bottom:12px; }
+    .box input, .box select { width:100%; padding:10px; margin-bottom:10px; border:1px solid #cbd5e1; border-radius:8px; font:inherit; }
+    .box .row { margin-top:6px; }
+    .box .row button { padding:11px; }
+    .secondary { background:#e2e8f0; }
+    .primary { background:var(--primary); color:#fff; }
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#111827; color:#fff;
+             padding:10px 18px; border-radius:20px; opacity:0; transition:.3s; pointer-events:none; z-index:30; }
+    .toast.show { opacity:1; }
+    footer { text-align:center; padding:20px; background:#0f172a; color:#94a3b8; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎓 College Library</h1>
+    <button class="hbtn" id="addBtn">+ Add Book</button>
+  </header>
+
+  <div class="hero">
+    <h2>Find books &amp; check available copies</h2>
+    <p>See how many copies our library holds for every title.</p>
+    <div class="search"><input id="search" type="search" placeholder="Search by title, author or subject..."></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="sTitles">0</b><span>Book titles</span></div>
+    <div class="stat"><b id="sTotal">0</b><span>Total copies</span></div>
+    <div class="stat"><b id="sAvail">0</b><span>Available now</span></div>
+    <div class="stat"><b id="sIssued">0</b><span>Issued</span></div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+  <div class="grid" id="grid"></div>
+
+  <div class="modal" id="modal"><div class="box">
+    <h3>Add a Book</h3>
+    <input id="fTitle" placeholder="Title">
+    <input id="fAuthor" placeholder="Author">
+    <select id="fCat">
+      <option>Computer Science</option><option>Electronics</option><option>Mechanical</option>
+      <option>Civil</option><option>Mathematics</option><option>Science</option>
+      <option>Management</option><option>Literature</option><option>Other</option>
+    </select>
+    <input id="fCopies" type="number" min="1" placeholder="Number of copies">
+    <div class="row">
+      <button class="secondary" id="cancelBtn">Cancel</button>
+      <button class="primary" id="saveBtn">Save Book</button>
+    </div>
+  </div></div>
+
+  <div class="toast" id="toast"></div>
+  <footer>&copy; <span id="year"></span> College Library. All rights reserved.</footer>
+
+  <script>
+    // total = copies owned, issued = copies currently borrowed
+    const defaultBooks = [
+      { id:1, title:"Advance Engineering Chemistry", author:" Erwin Kreyszing", category:"Computer Science", total:9, issued:3 },
+      { id:2, title:"Operating System Concepts", author:"Silberschatz, Galvin, Gagne", category:"Computer Science", total:6, issued:6 },
+      { id:3, title:"Database System Concepts", author:"Silberschatz, Korth, Sudarshan", category:"Computer Science", total:5, issued:2 },
+      { id:4, title:"Microelectronic Circuits", author:"Sedra & Smith", category:"Electronics", total:4, issued:1 },
+      { id:5, title:"Engineering Mechanics", author:"R. C. Hibbeler", category:"Mechanical", total:7, issued:4 },
+      { id:6, title:"Advanced Engineering Mathematics", author:"Erwin Kreyszig", category:"Mathematics", total:10, issued:5 },
+      { id:7, title:"Concepts of Physics", author:"H. C. Verma", category:"Science", total:6, issued:0 },
+      { id:8, title:"Principles of Management", author:"Koontz & Weihrich", category:"Management", total:3, issued:3 }
+    ];
+
+    const $ = id => document.getElementById(id);
+    let books = defaultBooks, activeCat = "All";
+    try { const s = localStorage.getItem("collegeLibrary"); if (s) books = JSON.parse(s); } catch (e) {}
+    const persist = () => { try { localStorage.setItem("collegeLibrary", JSON.stringify(books)); } catch (e) {} };
+
+    function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1800); }
+
+    function renderStats() {
+      const total = books.reduce((s, b) => s + b.total, 0);
+      const issued = books.reduce((s, b) => s + b.issued, 0);
+      $("sTitles").textContent = books.length; $("sTotal").textContent = total;
+      $("sAvail").textContent = total - issued; $("sIssued").textContent = issued;
+    }
+
+    function renderFilters() {
+      const cats = ["All", ...new Set(books.map(b => b.category))];
+      $("filters").innerHTML = cats.map(c => `<button class="chip ${c===activeCat?'active':''}" data-cat="${c}">${c}</button>`).join("");
+      document.querySelectorAll(".chip").forEach(ch => ch.onclick = () => { activeCat = ch.dataset.cat; renderFilters(); renderBooks(); });
+    }
+
+    function renderBooks() {
+      const q = $("search").value.toLowerCase();
+      const list = books.filter(b => (activeCat === "All" || b.category === activeCat) &&
+        (b.title + b.author + b.category).toLowerCase().includes(q));
+      $("grid").innerHTML = list.length ? list.map(b => {
+        const avail = b.total - b.issued;
+        return `<div class="book">
+          <h3>${b.title}</h3><small>${b.author}</small><small>${b.category}</small>
+          <div class="copies">
+            <div class="pill"><b>${b.total}</b>Total</div>
+            <div class="pill ${avail ? 'avail' : 'none'}"><b>${avail}</b>Available</div>
+            <div class="pill"><b>${b.issued}</b>Issued</div>
+          </div>
+          <div class="row">
+            <button class="borrow" data-act="borrow" data-id="${b.id}" ${avail ? '' : 'disabled'}>${avail ? 'Issue Copy' : 'Not Available'}</button>
+            <button class="return" data-act="return" data-id="${b.id}" ${b.issued ? '' : 'disabled'}>Return</button>
+          </div></div>`;
+      }).join("") : `<div class="empty">No books found.</div>`;
+      document.querySelectorAll(".row button[data-act]").forEach(btn => btn.onclick = () => change(+btn.dataset.id, btn.dataset.act));
+    }
+
+    function change(id, act) {
+      const b = books.find(x => x.id === id);
+      if (act === "borrow" && b.issued < b.total) { b.issued++; toast("Copy issued"); }
+      if (act === "return" && b.issued > 0) { b.issued--; toast("Copy returned"); }
+      persist(); renderAll();
+    }
+
+    function renderAll() { renderStats(); renderFilters(); renderBooks(); }
+
+    $("addBtn").onclick = () => $("modal").classList.add("open");
+    $("cancelBtn").onclick = () => $("modal").classList.remove("open");
+    $("modal").onclick = e => { if (e.target === $("modal")) $("modal").classList.remove("open"); };
+    $("saveBtn").onclick = () => {
+      const title = $("fTitle").value.trim(), author = $("fAuthor").value.trim(), copies = parseInt($("fCopies").value);
+      if (!title || !author || !(copies > 0)) { toast("Fill all fields correctly"); return; }
+      books.push({ id: Date.now(), title, author, category: $("fCat").value, total: copies, issued: 0 });
+      persist(); renderAll();
+      ["fTitle","fAuthor","fCopies"].forEach(i => $(i).value = "");
+      $("modal").classList.remove("open"); toast("Book added");
+    };
+    $("search").oninput = renderBooks;
+    $("year").textContent = new Date().getFullYear();
+    renderAll();
+  </script>
+</body>
+</html>
+```
